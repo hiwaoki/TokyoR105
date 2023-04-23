@@ -1,0 +1,217 @@
+---
+title: "TokyoR105-iwaoki"
+author: "Haruhiko Iwaoki"
+date: '2023-04-15'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggsci)
+library(patchwork)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+cols <- pal_npg("nrc", alpha = 1)(9)
+```
+
+# No.1 3D plots
+
+## S1: Toshin's bar plot (6ページ右上)
+
+```{r}
+# データ
+d <- tibble(Year = c(2021, 2022, 2023),
+            N = c(4366, 4612, 4703))
+
+# 棒グラフプロット
+ggplot(data = d, aes(x = Year, y = N)) +
+  # 文字サイズ変更
+  theme(text = element_text(size = 20),
+        # 凡例なし
+        legend.position = "none") +
+  # 棒グラフ
+  geom_bar(stat = "identity", color = "black") +
+  # カラーパレットはNatureっぽいやつ
+  scale_fill_npg()
+
+# 折れ線グラフプロット
+ggplot(data = d, aes(x = Year, y = N, color = "")) +
+  # 文字サイズ変更
+  theme(text = element_text(size = 20),
+        # 凡例なし
+        legend.position = "none") +
+  scale_x_continuous(breaks = c(2021, 2022, 2023)) +
+  geom_point(size = 5) +
+  geom_line(size = 2) + 
+  ylim(4300, 4800)
+  # y軸の範囲を180-220に制限する
+  # coord_cartesian(ylim = c(4000, 4800)) +
+  # カラーパレットはNatureっぽいやつ
+  scale_fill_npg()
+```
+
+## S2: Toshin's pie chart (6ページ右下)
+
+```{r}
+# カラー
+C <- c(cols[1], "gray")
+
+# データ
+p_t <- 0.369
+d_pie <- tibble(class = c("T", "Others"),
+                p = c(p_t, 1-p_t),
+                position = cumsum(p) - p/2)
+
+# 円グラフプロット
+ggplot(data = d_pie, aes(x = "", y = p, fill = class)) +
+  # 文字サイズ変更
+  theme(text = element_text(size  = 40),
+        # 凡例なし
+        legend.position = "none") +
+  # 塗りつぶしカラー指定
+  scale_fill_manual(values = c("gray", cols[1]), drop = FALSE) +
+  # 棒グラフ
+  geom_bar(stat = "identity", width = 1, fill = C, color = "black") +
+  # 棒グラフを円グラフへ変換
+  coord_polar("y", start = 0) +
+  # 円グラフに文字入れる
+  geom_text(aes(y = position, label = class), size = 10, color = "black") + 
+  # 目盛りなし
+  theme_void()
+```
+
+# No2. Pie chart
+
+## Pie chart (7ページ左)
+
+```{r}
+# カラー
+C <- cols[1:7]
+
+# 円グラフの色を時計回りにつける工夫、もっといいやり方あるはず
+class = factor(c("A", "B", "C", "D", "E", "F", "G"), levels = c("G", "F", "E", "D", "C", "B", "A"))
+
+# データ
+d_pie <- tibble(class = class,
+                p = c(0.25, 0.23, 0.15, 0.12, 0.10, 0.08, 0.07),
+                position = cumsum(p) - p/2)
+
+# 円グラフプロット
+ggplot(data = d_pie, aes(x = "", y = p, fill = class)) +
+  # 文字サイズ変更
+  theme(text = element_text(size  = 20),
+        # 凡例なし
+        legend.position = "none") +
+  # 塗りつぶしカラー
+  scale_fill_manual(values = rev(C), drop = FALSE) +
+  # 棒グラフ
+  geom_bar(stat = "identity", width = 1) +
+  # 棒グラフを円グラフに変換
+  coord_polar("y", start = 0) +
+  # 円グラフに文字入れる
+  geom_text(aes(y = position, label = class), size = 10, color = "black") + 
+  # 目盛りなし
+  theme_void()
+```
+
+## S1: Bar plot (7ページ右上)
+
+```{r}
+# データ
+d_pie <- tibble(class = c("A", "B", "C", "D", "E", "F", "G"),
+                proportion = c(0.25, 0.23, 0.15, 0.12, 0.10, 0.08, 0.07))
+
+# プロット
+ggplot(data = d_pie, aes(x = class, y = proportion, fill = class)) +
+  # 文字サイズ変更
+  theme(text = element_text(size  = 20)) +
+  # 棒グラフ
+  geom_bar(stat = "identity", width = 1, fill = "gray", color = "black")
+```
+
+## S2: Cumulative bar plot
+
+```{r}
+# データ
+d1 <- tibble(ID = "D1",
+             class = factor(c("A", "B", "C", "D", "E", "F", "G"), levels = c("G", "F", "E", "D", "C", "B", "A")),
+             p = c(0.25, 0.23, 0.15, 0.12, 0.10, 0.08, 0.07))
+d2 <- tibble(ID = "D2",
+             class = factor(c("A", "B", "C", "D", "E", "F", "G"), levels = c("G", "F", "E", "D", "C", "B", "A")),
+             p = c(0.5, 0.25, 0.20, 0.02, 0.01, 0.01, 0.01))
+
+# データを行方向に結合する
+d_pie <- bind_rows(d1, d2)
+
+# プロット
+ggplot(data = d_pie, aes(x = ID, y = p, fill = class)) +
+  # 凡例の設定(タイトルは上、ラベルは下など)
+  guides(fill = guide_legend(reverse = TRUE,
+                             title.position = "top",
+                             label.position = "bottom",
+                             keywidth = 5,
+                             keyheight = 2,
+                             nrow = 1,)) +
+  # x, y軸ラベルなし
+  labs(x = NULL, y = "proportion") + 
+  # 文字サイズ変更
+  theme(text = element_text(size  = 30),
+        # y軸グリッドなし
+        panel.grid.major.y = element_blank(),
+        # 凡例は図の上
+        legend.position = "top") +
+  # 塗りつぶしカラー
+  scale_fill_manual(values = rev(cols), drop = FALSE) +
+  # 棒グラフ
+  geom_bar(stat = "identity", width = 1, color = "black") +
+  # x軸とy軸を反転させる(横向き棒グラフ)
+  coord_flip()
+```
+
+# No.3 Two graphs with different scales
+
+## 8ページ左の図
+
+```{r}
+# データ
+d1 <- tibble(class = c("A", "B", "C"),
+             value = c(100, 200, 300))
+d2 <- tibble(class = c("A", "B", "C"),
+             value = c(190, 200, 210))
+
+g1 <- ggplot(data = d1, aes(x = class, y = value, fill = class)) +
+  scale_y_continuous(breaks = c(0, 100, 200, 300, 400), limits = c(0, 400)) +
+  geom_bar(stat = "identity") +
+  scale_fill_npg()
+
+g2 <- ggplot(data = d2, aes(x = class, y = value, fill = class)) +
+  coord_cartesian(ylim = c(180, 220)) +
+  geom_bar(stat = "identity") +
+  scale_fill_npg()
+
+g1 + g2 + plot_layout(ncol = 2)
+```
+
+## 8ページ右の図
+
+```{r}
+# データ
+d1 <- tibble(class = c("A", "B", "C"),
+             value = c(100, 200, 300))
+d2 <- tibble(class = c("A", "B", "C"),
+             value = c(190, 200, 210))
+
+g1 <- ggplot(data = d1, aes(x = class, y = value, fill = class)) +
+  # scale_y_continuous(breaks = c(0, 100, 200, 300, 400), limits = c(0, 400)) +
+  geom_bar(stat = "identity") +
+  scale_fill_npg()
+
+g2 <- ggplot(data = d2, aes(x = class, y = value, fill = class)) +
+  # coord_cartesian(ylim = c(180, 220)) +
+  geom_bar(stat = "identity") +
+  scale_fill_npg()
+
+g1 + g2 + plot_layout(ncol = 2)
+```
